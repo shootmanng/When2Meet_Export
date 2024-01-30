@@ -5,7 +5,7 @@ import datetime
 import pandas as pd
 
 
-when2meet_page = requests.get('https://www.when2meet.com/?23218031-HEprS')
+when2meet_page = requests.get('Link here')
 
 class GetData:
     def __init__(self, soup):
