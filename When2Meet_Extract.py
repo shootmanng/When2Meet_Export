@@ -2,10 +2,9 @@ from bs4 import BeautifulSoup
 import requests
 import re
 import datetime
-import pandas as pd
 
 
-when2meet_page = requests.get('Link here')
+when2meet_page = requests.get('https://www.when2meet.com/POLL Link')
 
 class GetData:
     def __init__(self, soup):
@@ -46,7 +45,7 @@ class GetData:
 
         return slot_names
 
-#Get sets of names at different time slots
+# Get sets of names at different time slots
 def get_sets(index_name, availability):
     time_sets = {}
    
@@ -64,14 +63,41 @@ def get_sets(index_name, availability):
     return time_sets
 
 
-
 soup = GetData(BeautifulSoup(when2meet_page.content, "html.parser"))
 slot_names = soup.get_slot_name()
 sets = get_sets(soup.normal_time, slot_names)
-for time_str, names_set in sets.items():
-    print(f"At {time_str}: {names_set}")
 
+# Remove test entries I made named 'Scott', if you have a test entry to remove, change the string below to the test name, or, if not, remove/comment out the following block:
+for times in sets:
+    if 'Scott' in sets[times]:
+        sets[times].remove('Scott')
+        
+# set size counter
+k=0
 
-#print(export_dataset)
-#export_dataset.to_csv('times.csv', encoding='utf-8', index=True)
+# remove times that conflict with personal/work calendar
+sets.pop('Wednesday03:15')
+sets.pop('Thursday12:00')
+sets.pop('Tuesday12:00')
+# end removed time blocks
 
+# create reference set to remove already tested values to avoid duplicate comparisons
+sets1=sets.copy()
+
+# compare different time blocks by unioning their members and counting the size of the set, storing the relevant values with the largest size (the result may not be unique, i.e. there can be several time blocks with the max number of students)
+while len(sets1)!=0:
+    for times1 in sets:
+        sets1.pop(times1)
+        for times2 in sets1:
+            if len(sets[times1] | sets[times2])>k:
+                k=len(sets[times1] | sets[times2])
+                b1=sets[times1]
+                b2=sets[times2]
+                t1=times1
+                t2=times2
+                
+# print the results
+print('The maximal number of students covered by the blocks ',t1,' and ',t2,' is ',k,' and the students are ',b1 | b2)
+print('--------------------')
+# pick two hour blocks based on this info and see the total number of students covered
+print('The total students covered by hour blocks chosen is', sets['Monday03:00'] | sets['Monday03:15'] | sets['Monday03:30'] | sets['Monday03:45'] | sets['Thursday12:30'] | sets['Thursday12:45'] | sets['Thursday01:00']| sets['Thursday01:15'],'which is ',len(sets['Monday03:00'] | sets['Monday03:15'] | sets['Monday03:30'] | sets['Monday03:45'] | sets['Thursday12:30'] | sets['Thursday12:45'] | sets['Thursday01:00']| sets['Thursday01:15']),'students')
